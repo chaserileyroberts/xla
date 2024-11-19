@@ -219,6 +219,7 @@ bool AsyncTracker::IsSupportedAsyncDone(const HloInstruction& hlo) const {
       case HloOpcode::kCollectiveBroadcast:
       case HloOpcode::kCollectivePermute:
       case HloOpcode::kCopy:
+      case HloOpcode::kCall:
       case HloOpcode::kReduceScatter:
         return true;
       default:
@@ -248,6 +249,7 @@ bool AsyncTracker::IsSupportedAsyncStart(const HloInstruction& hlo) const {
       case HloOpcode::kCollectiveBroadcast:
       case HloOpcode::kCollectivePermute:
       case HloOpcode::kCopy:
+      case HloOpcode::kCall:
       case HloOpcode::kReduceScatter:
         return true;
       default:
@@ -2152,7 +2154,7 @@ std::string HloScheduleGraph::ToString(
 
 HloGraphNode& HloScheduleGraph::GetNode(const HloInstruction* instr) const {
   auto it = nodes_.find(instr);
-  CHECK(it != nodes_.end());
+  CHECK(it != nodes_.end()) << instr->ToString();
   return *it->second;
 }
 

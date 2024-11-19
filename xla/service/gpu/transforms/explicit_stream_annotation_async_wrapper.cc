@@ -39,12 +39,19 @@ static absl::StatusOr<bool> AsynchronizeInstruction(HloInstruction* instr) {
     return false;
   }
   HloComputation* computation = instr->parent();
-  TF_ASSIGN_OR_RETURN(
-      HloInstruction * done,
-      computation->CreateAsyncInstructions(
-          instr, {},
-          ExplicitStreamAnnotationAsyncWrapper::kExplicitExecutionThread,
-          /*replace=*/true));
+  FrontendAttributes old_attributes = instr->frontend_attributes();
+  // Clear the attributes before we use this operation to create the async
+  // instructions.
+  instr->set_frontend_attributes(FrontendAttributes());
+   TF_ASSIGN_OR_RETURN(
+       HloInstruction * done,
+       computation->CreateAsyncInstructions(
+           instr, {},
+           ExplicitStreamAnnotationAsyncWrapper::kExplicitExecutionThread,
+           /*replace=*/true));
+  // We then replace the old attributes after creation.
+  done->set_frontend_attributes(old_attributes);
+  done->mutable_operand(0)->set_frontend_attributes(old_attributes);
   TF_ASSIGN_OR_RETURN(GpuBackendConfig gpu_config,
                       done->backend_config<GpuBackendConfig>());
   // Set the false delay of done op to be false so it can be scheduled

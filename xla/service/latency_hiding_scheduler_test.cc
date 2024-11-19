@@ -3255,6 +3255,37 @@ ENTRY %module {
   EXPECT_LT(c2_index, ag_done_index);
 }
 
+TEST_F(LatencyHidingSchedulerTest, ScheduleAndStreamAnnotationTest) {
+  absl::string_view hlo_string = R"(
+HloModule multiple_async_done_scheduler_test, is_scheduled=true
+  %sub (lhs: s32[<=4096]{0:T(8)M(1024)}) -> s32[<=4096]{0:T(8)M(1024)} {
+    %lhs = s32[<=4096]{0:T(8)M(1024)} parameter(0)
+    ROOT %sub = s32[<=4096]{0:T(8)M(1024)} subtract(s32[<=4096]{0:T(8)M(1024)} %lhs, s32[<=4096]{0:T(8)M(1024)} %lhs)
+  }
+
+ENTRY main {
+  %input = s32[<=4096]{0:T(8)M(1024)} parameter(0)
+
+  %call-start.1 = ((s32[<=4096]{0:T(8)M(1024)}), s32[<=4096]{0:T(8)M(1024)}, u32[]{:T(8)S(8)})
+    call-start(s32[<=4096]{0:T(8)M(1024)} %input),
+     to_apply=%sub, async_execution_thread="explicit", frontend_attributes={_scheduling_group_id="1", _xla_stream_annotation="1"}
+
+  ROOT %call-done.1 = s32[<=4096]{0:T(8)M(1024)}
+    call-done(((s32[<=4096]{0:T(8)M(1024)}), s32[<=4096]{0:T(8)M(1024)}, u32[]{:T(8)S(8)}) %call-start.1), frontend_attributes={_scheduling_group_id="1", _xla_stream_annotation="1"}
+}
+)";
+
+  TF_ASSERT_OK_AND_ASSIGN(auto hlo_module, ParseHloText(hlo_string));
+  HloSchedule& module_schedule = hlo_module->schedule();
+  EXPECT_TRUE(hlo_module->has_entry_computation());
+  auto sched_config = GetDefaultSchedConfig();
+  sched_config.aggressive_scheduling_policies = true;
+  EXPECT_TRUE(RunScheduler(hlo_module.get(), sched_config,
+                           std::make_unique<TestLatencyEstimator>())
+                  .ok());
+  EXPECT_TRUE(hlo_module->has_entry_computation());
+}
+
 TEST_F(LatencyHidingSchedulerTest, AnnotationFirstDataIndependentConv) {
   absl::string_view hlo_string = R"(
 HloModule module, is_scheduled=true
