@@ -59,9 +59,9 @@ TEST_F(ExplicitStreamAnnotationAsyncWrapperTest, AnnotatedOpIsWrapped) {
 
   TF_ASSERT_OK_AND_ASSIGN(bool mutated, wrapper_pass.Run(module.get()));
   absl::StatusOr<bool> filecheck_result = RunFileCheck(module->ToString({}), R"(
-  //CHECK: %lhs.1 = f32[] constant(42)
-  //CHECK: %call-start = ((f32[]), f32[]) call-start(f32[] %lhs.1), async_execution_thread="explicit", to_apply=%sub, frontend_attributes={_xla_stream_annotation="1"}
-  //CHECK: ROOT %call-done = f32[] call-done(((f32[]), f32[]) %call-start), frontend_attributes={_xla_stream_annotation="1"}, backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"force_earliest_schedule":false}
+  // CHECK: %lhs.1 = f32[] constant(42)
+  // CHECK: %call-start = ((f32[]), f32[]) call-start(f32[] %lhs.1), async_execution_thread="explicit", to_apply=%sub, frontend_attributes={_xla_stream_annotation="1"}
+  // CHECK: ROOT %call-done = f32[] call-done(((f32[]), f32[]) %call-start), frontend_attributes={_xla_stream_annotation="1"}, backend_config={"operation_queue_id":"0","wait_on_operation_queues":[],"force_earliest_schedule":false}
   )");
   TF_ASSERT_OK(filecheck_result.status());
   EXPECT_TRUE(*filecheck_result);
