@@ -3015,6 +3015,7 @@ cc_library(
     srcs = ["execution_stream_assignment.cc"],
     hdrs = ["execution_stream_assignment.h"],
     deps = [
+        "//xla:side_effect_util",
         "//xla/hlo/ir:hlo",
         "//xla/service:call_graph",
         "//xla/service/gpu/runtime:thunk",
