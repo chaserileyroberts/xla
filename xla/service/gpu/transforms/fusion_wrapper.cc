@@ -32,21 +32,11 @@ namespace gpu {
 absl::StatusOr<bool> FusionWrapper::Run(
     HloModule* module,
     const absl::flat_hash_set<absl::string_view>& execution_threads) {
-  auto instructions = module->entry_computation()->MakeInstructionPostOrder();
   bool changed = false;
 
   std::function<absl::Status(HloInstruction*)> handle_instruction;
   handle_instruction = [&](HloInstruction* instruction) -> absl::Status {
     switch (instruction->opcode()) {
-      case HloOpcode::kConditional:
-      case HloOpcode::kWhile:
-        for (auto* computation : instruction->called_computations()) {
-          for (auto* inner_instruction :
-               computation->MakeInstructionPostOrder()) {
-            TF_RETURN_IF_ERROR(handle_instruction(inner_instruction));
-          }
-        }
-        break;
       case HloOpcode::kAbs:
       case HloOpcode::kAdd:
       case HloOpcode::kAnd:
@@ -144,8 +134,10 @@ absl::StatusOr<bool> FusionWrapper::Run(
     return absl::OkStatus();
   };
 
-  for (auto* instruction : instructions) {
-    TF_RETURN_IF_ERROR(handle_instruction(instruction));
+  for (auto* computation : GetFusibleComputations(*module, execution_threads)) {
+    for (auto* instruction : computation->MakeInstructionPostOrder()) {
+      TF_RETURN_IF_ERROR(handle_instruction(instruction));
+    }
   }
   return changed;
 }

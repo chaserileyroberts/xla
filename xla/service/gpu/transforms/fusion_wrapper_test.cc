@@ -236,6 +236,43 @@ TEST_F(FusionWrapperTest, WhileInFusion) {
                             std::nullopt);
 }
 
+TEST_F(FusionWrapperTest, AsyncComputation) {
+  RunAndFilecheckHloRewrite(R"(
+      HloModule While
+
+      %body {
+        %parameter.5 = (f32[5]{0}) parameter(0)
+        %constant = f32[] constant(0)
+        %broadcast = f32[5]{0} broadcast(f32[] %constant), dimensions={}
+        ROOT %tuple.2 = (f32[5]{0}) tuple(f32[5]{0} %broadcast)
+      }
+
+      ENTRY %main (parameter.1: f32[5]) -> (f32[5]) {
+        %parameter.1 = f32[5]{0} parameter(0)
+        %copy = f32[5]{0} copy(f32[5]{0} %parameter.1)
+        %tuple = (f32[5]{0}) tuple(f32[5]{0} %copy)
+        ROOT %called = (f32[5]{0}) call((f32[5]{0}) %tuple), to_apply=%body,
+          frontend_attributes={_xla_stream_annotation="1"}
+      })",
+                            FusionWrapper(device_description()), R"(
+// CHECK: %wrapped_broadcast_computation {{.*}} {
+// CHECK:  %param_0 = f32[] parameter(0)
+// CHECK:  ROOT %broadcast.0 = f32[5]{0} broadcast(%param_0), dimensions={}
+// CHECK: }
+// CHECK: %body {{.*}} {
+// CHECK:   %parameter.5 = (f32[5]{0}) parameter(0)
+// CHECK:   %constant = f32[] constant(0)
+// CHECK:   %wrapped_broadcast = f32[5]{0} fusion(%constant), kind=kLoop, calls=%wrapped_broadcast_computation
+// CHECK:   ROOT %tuple.2 = (f32[5]{0}) tuple(%wrapped_broadcast)
+// CHECK: }
+// CHECK: ENTRY %main {{.*}} {
+// CHECK:   %parameter.1 = f32[5]{0} parameter(0)
+// CHECK:   %copy = f32[5]{0} copy(%parameter.1)
+// CHECK:   %tuple = (f32[5]{0}) tuple(%copy)
+// CHECK:           ROOT %called = (f32[5]{0}) call((f32[5]{0}) %tuple), to_apply=%body, frontend_attributes={_xla_stream_annotation="1"}
+// CHECK: })");
+}
+
 }  // namespace
 }  // namespace gpu
 }  // namespace xla
