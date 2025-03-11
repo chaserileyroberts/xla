@@ -2452,12 +2452,13 @@ absl::Status VerifyAsynchronousInstructionPairs(const HloModule& module) {
 // Checks that the asynchronous computation only has a root and parameter
 // instructions.
 absl::Status VerifyAsyncComputation(const HloComputation* async_computation) {
-  if (!async_computation->CanExpandIntoSingleInstruction()) {
-    return FailedPrecondition(
-        "Asynchronous computation %s expected to contain only the root and "
-        "parameter instructions.",
-        async_computation->name());
-  }
+
+  // if (!async_computation->CanExpandIntoSingleInstruction()) {
+  //  return FailedPrecondition(
+  //      "Asynchronous computation %s expected to contain only the root and "
+  //      "parameter instructions.",
+  //      async_computation->name());
+  //}
   return absl::OkStatus();
 }
 

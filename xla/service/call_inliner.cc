@@ -176,6 +176,13 @@ bool InlineComposites(
              instruction->frontend_attributes().map().at("composite.name"));
 }
 
+bool InlineNcclGroups(HloInstruction* instruction) {
+  if (instruction->frontend_attributes().map().contains(kNcclGroupAttr)) {  
+    return false;
+  }                               
+  return true;
+}
+
 bool InlineStreamAnnotation(HloInstruction* instruction) {
   if (instruction->GetModule()
           ->config()
@@ -243,6 +250,7 @@ bool CallInliner::IsInlineableCallOp(HloInstruction* instruction) const {
          !instruction->parent()->IsAsyncComputation() &&
          InlineUnderShardy(instruction) &&
          InlineComposites(instruction, composites_to_preserve_) &&
+	 InlineNcclGroups(instruction) &&
          InlineStreamAnnotation(instruction);
 }
 
