@@ -2449,19 +2449,6 @@ absl::Status VerifyAsynchronousInstructionPairs(const HloModule& module) {
   return absl::OkStatus();
 }
 
-// Checks that the asynchronous computation only has a root and parameter
-// instructions.
-absl::Status VerifyAsyncComputation(const HloComputation* async_computation) {
-
-  // if (!async_computation->CanExpandIntoSingleInstruction()) {
-  //  return FailedPrecondition(
-  //      "Asynchronous computation %s expected to contain only the root and "
-  //      "parameter instructions.",
-  //      async_computation->name());
-  //}
-  return absl::OkStatus();
-}
-
 // Checks that AllReduce instructions in the module are either all layout
 // constrained or all unconstrained.
 absl::Status VerifyLayoutConstrainedAllReduce(const HloModule& module) {
@@ -3105,13 +3092,6 @@ absl::StatusOr<bool> HloVerifier::Run(
     for (auto* computation : module->computations(execution_threads)) {
       TF_RETURN_IF_ERROR(computation->Accept(shape_verifier.get()));
       TF_RETURN_IF_ERROR(computation->Accept(&instruction_verifier));
-      // Verify that async computations contain a single instruction or a
-      // collection of send/recv instructions. This is needed to represent NCCL
-      // groups on GPU.
-      if (computation->IsAsyncComputation() &&
-          !computation->OnlyContainsSendRecv()) {
-        TF_RETURN_IF_ERROR(VerifyAsyncComputation(computation));
-      }
     }
 
     TF_RETURN_IF_ERROR(shape_verifier->VerifyEntryComputationLayout(*module));

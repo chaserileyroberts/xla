@@ -36,18 +36,18 @@ using ExplicitNcclGroupAsyncWrapperTest = HloTestBase;
 TEST_F(ExplicitNcclGroupAsyncWrapperTest, AnnotatedOpIsWrapped) {
   const absl::string_view hlo_string = R"(
   HloModule composite
-
-  %comms (a: f32[1]) -> (f32[1], f32[1]) {
+  comms {
     a = f32[1] parameter(0)
-    x = f32[1] all-gather(f32[1] a), dimensions={0}
+    x = f32[1] all-gather(a), dimensions={0}
     y = f32[1] collective-permute(a), source_target_pairs={{0,1}}
     ROOT result = (f32[1], f32[1]) tuple(x, y)
   }
 
-  ENTRY %main () -> (f32[1], f32[1]) {
+  ENTRY main {
     b = f32[1] parameter(0)
-    ROOT c = (f32[1], f32[1]) call(f32[1] b), to_apply=%comms, frontend_attributes={_nccl_group=""}
-  })";
+    ROOT c = (f32[1], f32[1]) call(b), to_apply=comms, frontend_attributes={_nccl_group=""}
+  }
+  )";
 
   auto debug_options = HloTestBase::GetDebugOptionsForTest();
   auto module = ParseAndReturnVerifiedModule(hlo_string).value();

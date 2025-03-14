@@ -177,10 +177,7 @@ bool InlineComposites(
 }
 
 bool InlineNcclGroups(HloInstruction* instruction) {
-  if (instruction->frontend_attributes().map().contains(kNcclGroupAttr)) {  
-    return false;
-  }                               
-  return true;
+  return !instruction->frontend_attributes().map().contains(kNcclGroupAttr);
 }
 
 bool InlineStreamAnnotation(HloInstruction* instruction) {

@@ -33,7 +33,6 @@ namespace xla::gpu {
 // will be launched in a single NCCL Group.
 class ExplicitNcclGroupAsyncWrapper : public HloModulePass {
  public:
-  inline static constexpr char kExplicitExecutionThread[] = "explicit";
 
   absl::string_view name() const override {
     return "explicit-nccl-group-async-wrapper";

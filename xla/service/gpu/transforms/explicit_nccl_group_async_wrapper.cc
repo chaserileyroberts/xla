@@ -54,9 +54,8 @@ static absl::StatusOr<bool> CreateNcclGroupAsyncPair(HloInstruction* instr) {
           ShapeUtil::MakeTupleShape(start_shapes), instr->operands(),
           instr->to_apply(), "explicit"));
   HloInstruction* async_done = computation->AddInstruction(
-        HloInstruction::CreateAsyncDone(instr->shape(), async_start));
-  TF_RETURN_IF_ERROR(instr->ReplaceAllUsesWith(async_done));
-  TF_RETURN_IF_ERROR(computation->RemoveInstruction(instr));
+      HloInstruction::CreateAsyncDone(instr->shape(), async_start));
+  TF_RETURN_IF_ERROR(computation->ReplaceInstruction(instr, async_done));
   return true;
 }
 }  // namespace
